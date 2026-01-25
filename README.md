@@ -65,7 +65,7 @@ The application is configured to use MySQL. You have two options:
 Edit `src/main/resources/application.properties`:
 
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/your_database_name?createDatabaseIfNotExist=true
+spring.datasource.url=jdbc:mysql://localhost:3306/your_database_name?createDatabaseIfNotExists=true
 spring.datasource.username=your_username
 spring.datasource.password=your_password
 ```
@@ -281,7 +281,7 @@ Key configuration options in `application.properties`:
 spring.application.name=shop-management-system
 
 # Database configuration
-spring.datasource.url=jdbc:mysql://localhost:3306/shop_management_system?createDatabaseIfNotExist=true
+spring.datasource.url=jdbc:mysql://localhost:3306/shop_management_system?createDatabaseIfNotExists=true
 spring.datasource.username=root
 spring.datasource.password=
 
