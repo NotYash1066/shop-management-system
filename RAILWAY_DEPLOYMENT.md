@@ -12,7 +12,7 @@
 Set these in your Railway project's Variables section:
 
 ```
-DATABASE_URL=jdbc:mysql://hopper.proxy.rlwy.net:48676/railway?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC
+DATABASE_URL=jdbc:mysql://mysql.railway.internal:3306/railway?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC
 DB_USERNAME=root
 DB_PASSWORD=ojXlriTrltsiJcylbZTFdrBXrvKwjWaW
 PORT=8080
@@ -20,8 +20,8 @@ SPRING_PROFILES_ACTIVE=railway
 ```
 
 ### Railway MySQL Connection Details
-- **Host**: hopper.proxy.rlwy.net
-- **Port**: 48676
+- **Host**: mysql.railway.internal
+- **Port**: 3306
 - **Database**: railway
 - **Username**: root
 - **Password**: ojXlriTrltsiJcylbZTFdrBXrvKwjWaW
