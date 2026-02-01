@@ -32,7 +32,8 @@ public class SecurityConfig { // Removed extends WebSecurityConfiguration
   @Autowired
   private JwtUtils jwtUtils;
 
-  @Bean
+  // @Bean annotation removed to prevent double registration (global + security chain)
+
   public AuthTokenFilter authenticationJwtTokenFilter() {
     return new AuthTokenFilter(jwtUtils, userDetailsService);
   }
