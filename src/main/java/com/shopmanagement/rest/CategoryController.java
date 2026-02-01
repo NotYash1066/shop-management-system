@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/categories")
-@PreAuthorize("true")
+@PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
 @Transactional
 public class CategoryController {
 
@@ -32,17 +32,20 @@ public class CategoryController {
 	}
 
 	@PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
 	public Category createCategory(@RequestBody Category category) {
 		return categoryRepository.save(category);
 	}
 
 	@PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
 	public Category updateCategory(@PathVariable Long id, @RequestBody Category category) {
 		category.setId(id);
 		return categoryRepository.save(category);
 	}
 
 	@DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
 	public String deleteCategory(@PathVariable Long id) {
 		categoryRepository.deleteById(id);
 		return "Category deleted";

@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/employees")
-@PreAuthorize("true")
+@PreAuthorize("hasRole('ADMIN')")
 @Transactional
 public class EmployeeController {
 

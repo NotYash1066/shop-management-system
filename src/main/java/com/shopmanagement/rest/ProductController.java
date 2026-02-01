@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
-@PreAuthorize("true")
+@PreAuthorize("hasRole('USER') or hasRole('ADMIN')") // Base permission for this controller
 @Transactional
 public class ProductController {
 	@Autowired
@@ -35,17 +35,20 @@ public class ProductController {
 	}
 
 	@PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
 	public Product createProduct(@RequestBody Product product) {
 		return productRepository.save(product);
 	}
 
 	@PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
 	public Product updateProduct(@PathVariable Long id, @RequestBody Product product) {
 		product.setId(id);
 		return productRepository.save(product);
 	}
 
 	@DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
 	public String deleteProduct(@PathVariable Long id) {
 		productRepository.deleteById(id);
 		return "Product deleted";

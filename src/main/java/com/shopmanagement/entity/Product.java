@@ -24,4 +24,8 @@ public class Product {
 	@ManyToOne
 	@JoinColumn(name = "supplier_id")
 	private Supplier supplier;
+
+	private Integer stockQuantity;
+	private String sku;
+	private Integer lowStockThreshold;
 }
