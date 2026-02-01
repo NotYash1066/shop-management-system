@@ -61,6 +61,7 @@ public class SecurityConfig { // Removed extends WebSecurityConfiguration
         .authorizeHttpRequests(auth -> 
           auth.requestMatchers("/api/auth/**").permitAll()
               .requestMatchers("/api/test/**").permitAll() // Optional: for test endpoints
+              .requestMatchers("/error").permitAll()
               .anyRequest().authenticated()
         );
 
