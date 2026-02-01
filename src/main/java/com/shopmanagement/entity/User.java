@@ -70,6 +70,10 @@ public class User {
 		return email;
 	}
 
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
 	public List<String> getRoles() {
 		return Collections.singletonList(role);
 	}
