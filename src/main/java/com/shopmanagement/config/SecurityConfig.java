@@ -16,6 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.shopmanagement.security.jwt.AuthEntryPointJwt;
 import com.shopmanagement.security.jwt.AuthTokenFilter;
+import com.shopmanagement.security.jwt.JwtUtils;
 import com.shopmanagement.security.services.UserDetailsServiceImpl;
 
 @Configuration
@@ -28,9 +29,12 @@ public class SecurityConfig { // Removed extends WebSecurityConfiguration
   @Autowired
   private AuthEntryPointJwt unauthorizedHandler;
 
+  @Autowired
+  private JwtUtils jwtUtils;
+
   @Bean
   public AuthTokenFilter authenticationJwtTokenFilter() {
-    return new AuthTokenFilter();
+    return new AuthTokenFilter(jwtUtils, userDetailsService);
   }
 
   @Bean
