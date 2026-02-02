@@ -25,10 +25,11 @@ public class DashboardController {
     @GetMapping("/stats")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getDashboardStats() {
+        Long shopId = getCurrentShopId();
         Map<String, Object> stats = new HashMap<>();
         
-        Double totalRevenue = orderRepository.sumTotalRevenue();
-        Long totalOrders = orderRepository.countTotalOrders();
+        Double totalRevenue = orderRepository.sumTotalRevenueByShopId(shopId);
+        Long totalOrders = orderRepository.countTotalOrdersByShopId(shopId);
 
         stats.put("totalRevenue", totalRevenue != null ? totalRevenue : 0.0);
         stats.put("totalOrders", totalOrders);
@@ -39,7 +40,14 @@ public class DashboardController {
     @GetMapping("/low-stock")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getLowStockProducts() {
+        Long shopId = getCurrentShopId();
         // Hardcoded threshold of 10 for now, or use a query param
-        return ResponseEntity.ok(productRepository.findByStockQuantityLessThan(10));
+        return ResponseEntity.ok(productRepository.findByShopIdAndStockQuantityLessThan(shopId, 10));
+    }
+
+    private Long getCurrentShopId() {
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        com.shopmanagement.security.services.UserDetailsImpl userDetails = (com.shopmanagement.security.services.UserDetailsImpl) authentication.getPrincipal();
+        return userDetails.getShopId();
     }
 }
