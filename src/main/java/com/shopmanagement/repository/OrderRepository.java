@@ -8,11 +8,15 @@ import java.util.List;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    List<Order> findByUserId(Long userId);
+    List<Order> findByUserIdAndShopId(Long userId, Long shopId);
+    
+    List<Order> findByShopId(Long shopId);
+    
+    Optional<Order> findByIdAndShopId(Long id, Long shopId);
 
-    @Query("SELECT SUM(o.totalAmount) FROM Order o")
-    Double sumTotalRevenue();
+    @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.shop.id = :shopId")
+    Double sumTotalRevenueByShopId(Long shopId);
 
-    @Query("SELECT COUNT(o) FROM Order o")
-    Long countTotalOrders();
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.shop.id = :shopId")
+    Long countTotalOrdersByShopId(Long shopId);
 }

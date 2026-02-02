@@ -5,9 +5,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
 
-	Category findByName(String name);
+	Category findByNameAndShopId(String name, Long shopId);
 
-	Category findByIdAndName(Long id, String name);
-
-	Category findByIdAndNameAndProductsIsNotNull(Long id, String name);
+	Category findByIdAndShopId(Long id, Long shopId);
+    
+    List<Category> findByShopId(Long shopId);
 }

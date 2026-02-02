@@ -37,6 +37,9 @@ public class AuthController {
 	@Autowired
 	JwtUtils jwtUtils;
 
+	@Autowired
+	com.shopmanagement.repository.ShopRepository shopRepository;
+
 	@PostMapping("/login")
 	public ResponseEntity<?> authenticateUser(@RequestBody User loginRequest) {
 
@@ -59,7 +62,7 @@ public class AuthController {
 	}
 
 	@PostMapping("/register")
-	public ResponseEntity<?> registerUser(@RequestBody User signUpRequest) {
+	public ResponseEntity<?> registerShop(@RequestBody ShopRegisterRequest signUpRequest) {
 		if (userRepository.findByUsername(signUpRequest.getUsername()).isPresent()) {
 			return ResponseEntity
 					.badRequest()
@@ -73,38 +76,29 @@ public class AuthController {
 		}
 		
 		if (signUpRequest.getPassword() == null || signUpRequest.getPassword().length() < 6) {
-		    return ResponseEntity
-		            .badRequest()
-		            .body("Error: Password must be at least 6 characters long!");
+			return ResponseEntity
+					.badRequest()
+					.body("Error: Password must be at least 6 characters long!");
 		}
 
-		// Create new user's account
+		if (signUpRequest.getShopName() == null || signUpRequest.getShopName().trim().isEmpty()) {
+			return ResponseEntity.badRequest().body("Error: Shop name is required!");
+		}
+
+		// 1. Create Shop
+		com.shopmanagement.entity.Shop shop = new com.shopmanagement.entity.Shop(signUpRequest.getShopName(), signUpRequest.getEmail());
+		shop = shopRepository.save(shop);
+
+		// 2. Create Admin User for that Shop
 		User user = new User(signUpRequest.getUsername(), 
 							 encoder.encode(signUpRequest.getPassword()),
-							 signUpRequest.getRole());
-		
-		// Handle specific fields if needed
-		// user.setEmail(signUpRequest.getEmail()); // Ensure email is set if not in constructor
-		// Since existing User constructor might not handle email, let's verify User entity.
-		// Looking at previous view_file, User constructor was: User(username, password, role)
-		// It has a separate email field. We need to set it.
-		
-		// Re-instantiating to be safe or using setters
-		// Let's use the object passed, but we need to encode password.
-		// Better to create new object to ensure cleaner state or just modify the passed one?
-		// Creating new one is safer.
-		
-		// HOWEVER, the constructor I saw earlier didn't have email.
-		// I need to set email explicitly.
+							 "ADMIN"); // First user is always ADMIN
 		
 		user.setEmail(signUpRequest.getEmail());
-		
-		if (user.getRole() == null) {
-		    user.setRole("USER");
-		}
+		user.setShop(shop);
 
 		userRepository.save(user);
 
-		return ResponseEntity.ok("User registered successfully!");
+		return ResponseEntity.ok("Shop registered successfully!");
 	}
 }

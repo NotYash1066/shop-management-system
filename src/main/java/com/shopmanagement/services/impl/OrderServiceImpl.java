@@ -30,22 +30,33 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private com.shopmanagement.services.AuditService auditService;
 
+    @Autowired
+    private com.shopmanagement.repository.ShopRepository shopRepository;
+
     @Override
     @Transactional
     public OrderResponseDTO createOrder(OrderRequestDTO orderRequest) {
         User user = userRepository.findById(orderRequest.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Ensure the operation is for the correct shop
+        Long currentShopId = getCurrentShopId();
+        if (!user.getShop().getId().equals(currentShopId)) {
+             throw new RuntimeException("Operation not allowed for this shop");
+        }
 
         Order order = new Order();
         order.setUser(user);
+        order.setShop(user.getShop()); // Link order to user's shop
         order.setTotalAmount(0.0);
 
         List<OrderItem> orderItems = new ArrayList<>();
         double totalAmount = 0.0;
 
         for (OrderItemRequestDTO itemRequest : orderRequest.getItems()) {
-            Product product = productRepository.findById(itemRequest.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Product not found: " + itemRequest.getProductId()));
+            // Find product by ID AND Shop ID to prevent buying another shop's product
+            Product product = productRepository.findByIdAndShopId(itemRequest.getProductId(), currentShopId)
+                    .orElseThrow(() -> new RuntimeException("Product not found or not available in this shop: " + itemRequest.getProductId()));
 
             // Stock Check
             if (product.getStockQuantity() == null || product.getStockQuantity() < itemRequest.getQuantity()) {
@@ -85,6 +96,13 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<Order> getOrdersByUserId(Long userId) {
-        return orderRepository.findByUserId(userId);
+        Long currentShopId = getCurrentShopId();
+        return orderRepository.findByUserIdAndShopId(userId, currentShopId);
+    }
+    
+    private Long getCurrentShopId() {
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        com.shopmanagement.security.services.UserDetailsImpl userDetails = (com.shopmanagement.security.services.UserDetailsImpl) authentication.getPrincipal();
+        return userDetails.getShopId();
     }
 }

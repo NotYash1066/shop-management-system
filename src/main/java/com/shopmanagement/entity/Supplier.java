@@ -18,6 +18,10 @@ public class Supplier {
 	private String name;
 	private String contact;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "shop_id", nullable = false)
+	private Shop shop;
+
 	@OneToMany(mappedBy = "supplier", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	private List<Product> products;
 

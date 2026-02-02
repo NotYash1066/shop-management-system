@@ -20,6 +20,10 @@ public class Order {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shop_id", nullable = false)
+    private Shop shop;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 

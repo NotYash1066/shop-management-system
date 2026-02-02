@@ -27,6 +27,11 @@ public class User {
 
 	private String role;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shop_id")
+    private Shop shop;
+
+
 	public User(String username, String password, String role) {
 		this.username = username;
 		this.password = password;
@@ -77,4 +82,12 @@ public class User {
 	public List<String> getRoles() {
 		return Collections.singletonList(role);
 	}
+
+    public Shop getShop() {
+        return shop;
+    }
+
+    public void setShop(Shop shop) {
+        this.shop = shop;
+    }
 }

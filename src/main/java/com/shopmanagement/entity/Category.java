@@ -19,6 +19,10 @@ public class Category {
 	private Long id;
 	private String name;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "shop_id", nullable = false)
+	private Shop shop;
+
 	@OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	private List<Product> products = Collections.emptyList();
 }
