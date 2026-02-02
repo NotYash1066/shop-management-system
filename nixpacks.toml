@@ -6,3 +6,6 @@ cmds = ["./mvnw clean package -DskipTests"]
 
 [start]
 cmd = "java -jar target/*.jar"
+
+[variables]
+MISE_HTTP_TIMEOUT = "300"
