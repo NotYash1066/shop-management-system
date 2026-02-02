@@ -34,6 +34,11 @@ public class UserDetailsImpl implements UserDetails {
     public static UserDetailsImpl build(User user) {
         // Handle null role gracefully if needed
         String role = user.getRole() != null ? user.getRole() : "USER";
+
+        if (!role.startsWith("ROLE_")) {
+            role = "ROLE_" + role;
+        }
+
         List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(role));
 
         return new UserDetailsImpl(
