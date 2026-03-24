@@ -6,6 +6,8 @@ import com.shopmanagement.repository.ProductRepository;
 import jakarta.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +20,7 @@ import java.util.List;
 public class ProductController {
 	@Autowired
 	private ProductRepository productRepository;
-    
+
     @Autowired
     private com.shopmanagement.repository.ShopRepository shopRepository;
 
@@ -29,6 +31,7 @@ public class ProductController {
 	}
 
 	@GetMapping("/{id}")
+    @Cacheable(value = "products", key = "'shop:' + #root.target.getCurrentShopId() + ':product:' + #id")
 	public Product getProductById(@PathVariable Long id) {
         Long shopId = getCurrentShopId();
 		return productRepository.findByIdAndShopId(id, shopId).orElseThrow(() -> new RuntimeException("Product not found"));
@@ -42,6 +45,7 @@ public class ProductController {
 
 	@PostMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @CacheEvict(value = "products", allEntries = true)
 	public Product createProduct(@RequestBody Product product) {
         Long shopId = getCurrentShopId();
         product.setShop(shopRepository.getReferenceById(shopId));
@@ -50,6 +54,7 @@ public class ProductController {
 
 	@PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @CacheEvict(value = "products", key = "'shop:' + #root.target.getCurrentShopId() + ':product:' + #id")
 	public Product updateProduct(@PathVariable Long id, @RequestBody Product product) {
         Long shopId = getCurrentShopId();
         Product existing = productRepository.findByIdAndShopId(id, shopId).orElseThrow(() -> new RuntimeException("Product not found"));
@@ -60,14 +65,15 @@ public class ProductController {
 
 	@DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @CacheEvict(value = "products", key = "'shop:' + #root.target.getCurrentShopId() + ':product:' + #id")
 	public String deleteProduct(@PathVariable Long id) {
         Long shopId = getCurrentShopId();
         Product existing = productRepository.findByIdAndShopId(id, shopId).orElseThrow(() -> new RuntimeException("Product not found"));
 		productRepository.deleteById(id);
 		return "Product deleted";
 	}
-    
-    private Long getCurrentShopId() {
+
+    public Long getCurrentShopId() {
         org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         com.shopmanagement.security.services.UserDetailsImpl userDetails = (com.shopmanagement.security.services.UserDetailsImpl) authentication.getPrincipal();
         return userDetails.getShopId();

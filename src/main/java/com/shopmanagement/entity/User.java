@@ -11,7 +11,10 @@ import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 @NoArgsConstructor
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+    @Index(name = "idx_user_username", columnList = "username"),
+    @Index(name = "idx_user_shop", columnList = "shop_id")
+})
 @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
 public class User {
 	@Id

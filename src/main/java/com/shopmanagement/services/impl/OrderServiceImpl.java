@@ -10,6 +10,8 @@ import com.shopmanagement.repository.UserRepository;
 import com.shopmanagement.services.OrderService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.shopmanagement.event.StockReconciliationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -33,6 +35,9 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private com.shopmanagement.repository.ShopRepository shopRepository;
 
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
     @Override
     @Transactional
     public OrderResponseDTO createOrder(OrderRequestDTO orderRequest) {
@@ -49,6 +54,7 @@ public class OrderServiceImpl implements OrderService {
         order.setUser(user);
         order.setShop(user.getShop()); // Link order to user's shop
         order.setTotalAmount(0.0);
+        order.setStatus(OrderStatus.PENDING); // Explicitly set to PENDING
 
         List<OrderItem> orderItems = new ArrayList<>();
         double totalAmount = 0.0;
@@ -58,16 +64,12 @@ public class OrderServiceImpl implements OrderService {
             Product product = productRepository.findByIdAndShopId(itemRequest.getProductId(), currentShopId)
                     .orElseThrow(() -> new RuntimeException("Product not found or not available in this shop: " + itemRequest.getProductId()));
 
-            // Stock Check
+            // Soft Stock Check (preliminary validation)
             if (product.getStockQuantity() == null || product.getStockQuantity() < itemRequest.getQuantity()) {
                 throw new RuntimeException("Insufficient stock for product: " + product.getName());
             }
 
-            // Deduct Stock
-            product.setStockQuantity(product.getStockQuantity() - itemRequest.getQuantity());
-            productRepository.save(product);
-
-            // Create Order Item
+            // Create Order Item (Do NOT deduct stock here)
             OrderItem orderItem = new OrderItem(order, product, itemRequest.getQuantity(), product.getPrice());
             orderItems.add(orderItem);
 
@@ -79,8 +81,11 @@ public class OrderServiceImpl implements OrderService {
         
         Order savedOrder = orderRepository.save(order);
         
+        // Publish event for async stock reconciliation
+        eventPublisher.publishEvent(new StockReconciliationEvent(savedOrder.getId()));
+
         // Log the action
-        auditService.log("CREATE", "ORDER", savedOrder.getId(), user.getId(), "Order placed with total amount: " + totalAmount);
+        auditService.log("CREATE", "ORDER", savedOrder.getId(), user.getId(), "Order placed (PENDING): " + totalAmount);
 
         // Map to DTO (Manual mapping for now)
         OrderResponseDTO response = new OrderResponseDTO();

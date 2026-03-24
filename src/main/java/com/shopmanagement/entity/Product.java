@@ -8,7 +8,10 @@ import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "products")
+@Table(name = "products", indexes = {
+    @Index(name = "idx_product_sku", columnList = "sku"),
+    @Index(name = "idx_product_shop", columnList = "shop_id")
+})
 @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
 public class Product {
 	@Id
