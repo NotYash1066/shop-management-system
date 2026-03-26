@@ -22,8 +22,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findDetailedById(@Param("orderId") Long orderId);
 
     @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.shop.id = :shopId")
-    Double sumTotalRevenueByShopId(Long shopId);
+    Double sumTotalRevenueByShopId(@Param("shopId") Long shopId);
 
     @Query("SELECT COUNT(o) FROM Order o WHERE o.shop.id = :shopId")
-    Long countTotalOrdersByShopId(Long shopId);
+    Long countTotalOrdersByShopId(@Param("shopId") Long shopId);
 }

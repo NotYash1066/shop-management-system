@@ -1,5 +1,6 @@
 package com.shopmanagement.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.List;
@@ -18,10 +19,12 @@ public class Supplier {
 	private String name;
 	private String contact;
 
+	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "shop_id", nullable = false)
 	private Shop shop;
 
+	@JsonIgnore
 	@OneToMany(mappedBy = "supplier", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	private List<Product> products;
 
