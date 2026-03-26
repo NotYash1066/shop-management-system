@@ -3,7 +3,6 @@ package com.shopmanagement.dto;
 import com.shopmanagement.entity.OrderStatus;
 import lombok.Data;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 public class OrderResponseDTO {
@@ -12,5 +11,7 @@ public class OrderResponseDTO {
     private Double totalAmount;
     private OrderStatus status;
     private LocalDateTime createdAt;
-//    private List<OrderItemResponseDTO> items; // Can add this later for detailed response
+    private LocalDateTime reconciliationStartedAt;
+    private LocalDateTime reconciliationCompletedAt;
+    private String reconciliationFailureReason;
 }

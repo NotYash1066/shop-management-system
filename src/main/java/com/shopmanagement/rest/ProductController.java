@@ -1,81 +1,68 @@
 package com.shopmanagement.rest;
 
-import com.shopmanagement.entity.Product;
-import com.shopmanagement.repository.ProductRepository;
-
-import jakarta.transaction.Transactional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.shopmanagement.dto.ProductResponseDTO;
+import com.shopmanagement.entity.Product;
+import com.shopmanagement.services.InventoryService;
 
 @RestController
 @RequestMapping("/api/products")
-@PreAuthorize("hasRole('USER') or hasRole('ADMIN')") // Base permission for this controller
-@Transactional
+@PreAuthorize("hasAuthority('inventory:read')")
 public class ProductController {
-	@Autowired
-	private ProductRepository productRepository;
 
-    @Autowired
-    private com.shopmanagement.repository.ShopRepository shopRepository;
+    private final InventoryService inventoryService;
 
-	@GetMapping
-	public List<Product> getAllProducts() {
-        Long shopId = getCurrentShopId();
-		return productRepository.findByShopId(shopId);
-	}
+    public ProductController(InventoryService inventoryService) {
+        this.inventoryService = inventoryService;
+    }
 
-	@GetMapping("/{id}")
-    @Cacheable(value = "products", key = "'shop:' + #root.target.getCurrentShopId() + ':product:' + #id")
-	public Product getProductById(@PathVariable Long id) {
-        Long shopId = getCurrentShopId();
-		return productRepository.findByIdAndShopId(id, shopId).orElseThrow(() -> new RuntimeException("Product not found"));
-	}
+    @GetMapping
+    public List<ProductResponseDTO> getAllProducts() {
+        return inventoryService.getAllProducts();
+    }
 
-	@GetMapping("/category/{categoryId}")
-	public List<Product> getProductsByCategory(@PathVariable Long categoryId) {
-        Long shopId = getCurrentShopId();
-		return productRepository.findByCategoryIdAndShopId(categoryId, shopId);
-	}
+    @GetMapping("/{id}")
+    public ProductResponseDTO getProductById(@PathVariable Long id) {
+        return inventoryService.getProductById(id);
+    }
 
-	@PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    @CacheEvict(value = "products", allEntries = true)
-	public Product createProduct(@RequestBody Product product) {
-        Long shopId = getCurrentShopId();
-        product.setShop(shopRepository.getReferenceById(shopId));
-		return productRepository.save(product);
-	}
+    @GetMapping("/sku/{sku}")
+    public ProductResponseDTO getProductBySku(@PathVariable String sku) {
+        return inventoryService.getProductBySku(sku);
+    }
 
-	@PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @CacheEvict(value = "products", key = "'shop:' + #root.target.getCurrentShopId() + ':product:' + #id")
-	public Product updateProduct(@PathVariable Long id, @RequestBody Product product) {
-        Long shopId = getCurrentShopId();
-        Product existing = productRepository.findByIdAndShopId(id, shopId).orElseThrow(() -> new RuntimeException("Product not found"));
-		product.setId(id);
-        product.setShop(shopRepository.getReferenceById(shopId)); // Ensure shop doesn't change or is set
-		return productRepository.save(product);
-	}
+    @GetMapping("/category/{categoryId}")
+    public List<ProductResponseDTO> getProductsByCategory(@PathVariable Long categoryId) {
+        return inventoryService.getProductsByCategory(categoryId);
+    }
 
-	@DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @CacheEvict(value = "products", key = "'shop:' + #root.target.getCurrentShopId() + ':product:' + #id")
-	public String deleteProduct(@PathVariable Long id) {
-        Long shopId = getCurrentShopId();
-        Product existing = productRepository.findByIdAndShopId(id, shopId).orElseThrow(() -> new RuntimeException("Product not found"));
-		productRepository.deleteById(id);
-		return "Product deleted";
-	}
+    @PostMapping
+    @PreAuthorize("hasAuthority('inventory:write')")
+    public ProductResponseDTO createProduct(@RequestBody Product product) {
+        return inventoryService.createProduct(product);
+    }
 
-    public Long getCurrentShopId() {
-        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-        com.shopmanagement.security.services.UserDetailsImpl userDetails = (com.shopmanagement.security.services.UserDetailsImpl) authentication.getPrincipal();
-        return userDetails.getShopId();
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('inventory:write')")
+    public ProductResponseDTO updateProduct(@PathVariable Long id, @RequestBody Product product) {
+        return inventoryService.updateProduct(id, product);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('inventory:write')")
+    public String deleteProduct(@PathVariable Long id) {
+        inventoryService.deleteProduct(id);
+        return "Product deleted";
     }
 }

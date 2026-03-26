@@ -7,11 +7,16 @@ import com.shopmanagement.entity.*;
 import com.shopmanagement.repository.OrderRepository;
 import com.shopmanagement.repository.ProductRepository;
 import com.shopmanagement.repository.UserRepository;
-import com.shopmanagement.services.OrderService;
-import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.shopmanagement.security.Permission;
+import com.shopmanagement.services.CurrentUserService;
 import com.shopmanagement.event.StockReconciliationEvent;
+import com.shopmanagement.services.OrderService;
+
+import jakarta.transaction.Transactional;
+
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -33,19 +38,19 @@ public class OrderServiceImpl implements OrderService {
     private com.shopmanagement.services.AuditService auditService;
 
     @Autowired
-    private com.shopmanagement.repository.ShopRepository shopRepository;
+    private ApplicationEventPublisher eventPublisher;
 
     @Autowired
-    private ApplicationEventPublisher eventPublisher;
+    private CurrentUserService currentUserService;
 
     @Override
     @Transactional
     public OrderResponseDTO createOrder(OrderRequestDTO orderRequest) {
         User user = userRepository.findById(orderRequest.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         // Ensure the operation is for the correct shop
-        Long currentShopId = getCurrentShopId();
+        Long currentShopId = currentUserService.getCurrentShopId();
         if (!user.getShop().getId().equals(currentShopId)) {
              throw new RuntimeException("Operation not allowed for this shop");
         }
@@ -78,36 +83,38 @@ public class OrderServiceImpl implements OrderService {
 
         order.setOrderItems(orderItems);
         order.setTotalAmount(totalAmount);
-        
+
         Order savedOrder = orderRepository.save(order);
-        
+
         // Publish event for async stock reconciliation
         eventPublisher.publishEvent(new StockReconciliationEvent(savedOrder.getId()));
 
         // Log the action
         auditService.log("CREATE", "ORDER", savedOrder.getId(), user.getId(), "Order placed (PENDING): " + totalAmount);
 
-        // Map to DTO (Manual mapping for now)
-        OrderResponseDTO response = new OrderResponseDTO();
-
-        response.setId(savedOrder.getId());
-        response.setUserId(savedOrder.getUser().getId());
-        response.setTotalAmount(savedOrder.getTotalAmount());
-        response.setStatus(savedOrder.getStatus());
-        response.setCreatedAt(savedOrder.getCreatedAt());
-
-        return response;
+        return toResponse(savedOrder);
     }
 
     @Override
     public List<Order> getOrdersByUserId(Long userId) {
-        Long currentShopId = getCurrentShopId();
+        Long currentShopId = currentUserService.getCurrentShopId();
+        boolean canViewOtherUsersOrders = currentUserService.hasAuthority(Permission.DASHBOARD_READ);
+        if (!canViewOtherUsersOrders && !currentUserService.getCurrentUserId().equals(userId)) {
+            throw new AccessDeniedException("You can only view your own orders");
+        }
         return orderRepository.findByUserIdAndShopId(userId, currentShopId);
     }
-    
-    private Long getCurrentShopId() {
-        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-        com.shopmanagement.security.services.UserDetailsImpl userDetails = (com.shopmanagement.security.services.UserDetailsImpl) authentication.getPrincipal();
-        return userDetails.getShopId();
+
+    private OrderResponseDTO toResponse(Order order) {
+        OrderResponseDTO response = new OrderResponseDTO();
+        response.setId(order.getId());
+        response.setUserId(order.getUser().getId());
+        response.setTotalAmount(order.getTotalAmount());
+        response.setStatus(order.getStatus());
+        response.setCreatedAt(order.getCreatedAt());
+        response.setReconciliationStartedAt(order.getReconciliationStartedAt());
+        response.setReconciliationCompletedAt(order.getReconciliationCompletedAt());
+        response.setReconciliationFailureReason(order.getReconciliationFailureReason());
+        return response;
     }
 }

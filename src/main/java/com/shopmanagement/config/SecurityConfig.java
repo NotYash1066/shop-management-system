@@ -22,7 +22,7 @@ import com.shopmanagement.security.services.UserDetailsServiceImpl;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig { // Removed extends WebSecurityConfiguration
-  
+
   @Autowired
   UserDetailsServiceImpl userDetailsService;
 
@@ -41,10 +41,10 @@ public class SecurityConfig { // Removed extends WebSecurityConfiguration
   @Bean
   public DaoAuthenticationProvider authenticationProvider() {
       DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-       
+
       authProvider.setUserDetailsService(userDetailsService);
       authProvider.setPasswordEncoder(passwordEncoder());
-   
+
       return authProvider;
   }
 
@@ -63,8 +63,9 @@ public class SecurityConfig { // Removed extends WebSecurityConfiguration
     http.csrf(csrf -> csrf.disable())
         .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .authorizeHttpRequests(auth -> 
+        .authorizeHttpRequests(auth ->
           auth.requestMatchers("/api/auth/**").permitAll()
+              .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
               .requestMatchers("/api/test/**").permitAll() // Optional: for test endpoints
               .requestMatchers("/error").permitAll()
               .anyRequest().authenticated()

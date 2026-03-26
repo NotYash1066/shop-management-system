@@ -8,7 +8,10 @@ import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "employees")
+@Table(name = "employees", indexes = {
+    @Index(name = "idx_employee_shop", columnList = "shop_id"),
+    @Index(name = "idx_employee_shop_email", columnList = "shop_id, email")
+})
 @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
 public class Employee {
 	@Id
@@ -17,4 +20,8 @@ public class Employee {
 	private String name;
 	private String role;
 	private String email;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shop_id")
+    private Shop shop;
 }

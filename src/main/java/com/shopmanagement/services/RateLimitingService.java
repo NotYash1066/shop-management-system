@@ -22,11 +22,11 @@ public class RateLimitingService {
     private Bucket newBucket(boolean isAuthenticated) {
         Bandwidth limit;
         if (isAuthenticated) {
-            // Authenticated users: 50 requests per minute
-             limit = Bandwidth.classic(50, Refill.greedy(50, Duration.ofMinutes(1)));
+            // Authenticated users: 500 requests per second for stress testing
+             limit = Bandwidth.classic(500, Refill.greedy(500, Duration.ofSeconds(1)));
         } else {
-            // Unauthenticated IPs: 10 requests per minute
-             limit = Bandwidth.classic(10, Refill.greedy(10, Duration.ofMinutes(1)));
+            // Unauthenticated IPs: 100 requests per second
+             limit = Bandwidth.classic(100, Refill.greedy(100, Duration.ofSeconds(1)));
         }
         return Bucket.builder()
                 .addLimit(limit)

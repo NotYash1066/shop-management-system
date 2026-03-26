@@ -1,34 +1,35 @@
-# Shop Management System 🏪
+# Shop Management System
 
-A comprehensive RESTful API-based shop management system built with Spring Boot, designed to handle all aspects of retail shop operations including product management, employee tracking, supplier management, and category organization.
+A multi-tenant REST API for retail operations built with Spring Boot. The current codebase focuses on secure shop-scoped inventory management, order processing, asynchronous stock reconciliation, and Redis-backed caching for hot inventory lookups.
 
 ## 📋 Overview
 
 The Shop Management System is a robust backend solution that provides a complete set of APIs for managing a retail shop's operations. It offers secure authentication, CRUD operations for all entities, and maintains relational integrity between products, categories, and suppliers.
 
-## ✨ Key Features
+## Key Features
 
-- **Product Management**: Complete CRUD operations for products with category and supplier associations
-- **Category Management**: Organize products into hierarchical categories
-- **Supplier Management**: Track and manage supplier information
-- **Employee Management**: Maintain employee records and information
-- **User Authentication**: Secure user registration and login functionality
-- **RESTful API**: Clean and intuitive REST endpoints for all operations
-- **Spring Security**: Built-in security features for protected endpoints
-- **MySQL Database**: Persistent data storage with JPA/Hibernate
-- **Automatic Schema Management**: Database tables auto-created and updated
+- Product inventory CRUD with shop-level SKU uniqueness
+- Redis-backed caching for inventory lookups by product ID and SKU
+- Asynchronous stock reconciliation using Spring Events and a dedicated executor
+- JWT authentication with permission-based RBAC enforced through Spring Security
+- Shop-scoped category, supplier, employee, order, and dashboard APIs
+- PostgreSQL persistence with JPA/Hibernate and query-oriented indexes
+- Load-testing helper script for concurrency and latency checks
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **Framework**: Spring Boot 3.4.4
 - **Language**: Java 17
-- **Database**: MySQL 8.x
+- **Database**: PostgreSQL
+- **Cache**: Redis
 - **ORM**: Spring Data JPA with Hibernate
-- **Security**: Spring Security
+- **Security**: Spring Security + JWT + method-level authorization
 - **Build Tool**: Maven
 - **Additional Libraries**:
   - Lombok (for reducing boilerplate code)
-  - Jackson (for JSON processing)
+  - Spring Cache
+  - Bucket4j
+  - SpringDoc OpenAPI
 
 ## 📋 Prerequisites
 
@@ -48,26 +49,25 @@ git clone https://github.com/NotYash1066/shop-management-system.git
 cd shop-management-system
 ```
 
-### 2. Configure Database
+### 2. Configure Database And Cache
 
-The application is configured to use MySQL. You have two options:
+The application is configured to use PostgreSQL and Redis by default.
 
-**Option A: Use default configuration (recommended for quick start)**
-- Create a MySQL database (it will be auto-created if it doesn't exist)
-- The default configuration uses:
-  - Database: `shop_management_system`
-  - Username: `root`
-  - Password: (empty)
-  - Port: `3306`
-
-**Option B: Custom database configuration**
+**PostgreSQL**
 
 Edit `src/main/resources/application.properties`:
 
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/your_database_name?createDatabaseIfNotExists=true
+spring.datasource.url=jdbc:postgresql://localhost:5432/your_database_name
 spring.datasource.username=your_username
 spring.datasource.password=your_password
+```
+
+**Redis**
+
+```properties
+spring.data.redis.host=localhost
+spring.data.redis.port=6379
 ```
 
 ### 3. Build the Project
@@ -258,7 +258,21 @@ curl http://localhost:8080/api/products
 4. Add request body in JSON format for POST/PUT requests
 5. Send the request and view the response
 
-## 🗄️ Database Schema
+## Performance Notes
+
+- Inventory reads use DTO projection queries to avoid unnecessary entity hydration on hot paths.
+- Product lookups by ID and SKU are cached in Redis with cache stampede protection via `@Cacheable(sync = true)`.
+- Stock updates triggered by order placement run asynchronously on a dedicated reconciliation executor so the order API can respond without waiting for inventory writes.
+- Product and order tables include shop-aware indexes to support the common lookup and dashboard patterns.
+- `load_test.py` can be used to generate concurrency and latency numbers for your environment.
+
+Example:
+
+```bash
+python3 load_test.py --url http://localhost:8080/api/products/sku/SKU-1 --method GET --requests 500 --concurrency 50 --headers '{"Authorization":"Bearer <jwt>"}' --payload '{}'
+```
+
+## Database Schema
 
 The application automatically creates the following tables:
 
@@ -298,7 +312,7 @@ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
 - **Logging**: Adjust logging levels in application.properties
 - **Security**: Customize Spring Security settings in SecurityConfig.java
 
-## 🧪 Testing
+## Testing
 
 Run the test suite:
 
@@ -344,22 +358,11 @@ This project is open source and available under the [MIT License](LICENSE).
 
 - GitHub: [@NotYash1066](https://github.com/NotYash1066)
 
-## 🐛 Known Issues
+## Current Gaps
 
-- Authentication endpoints are currently placeholder implementations
-- Password encryption should be added before production use
-- Consider adding proper JWT token-based authentication
-
-## 🚀 Future Enhancements
-
-- Add JWT authentication
-- Implement role-based access control
-- Add inventory tracking
-- Sales and transaction management
-- Reporting and analytics
-- API documentation with Swagger/OpenAPI
-- Docker containerization
-- Unit and integration tests
+- The repository now supports the architecture behind the concurrency and RBAC claims, but benchmark numbers such as "40% lower DB overhead" or "sub-50ms latency" still need to be measured in a running environment.
+- There is not yet a repeatable benchmark report checked into the repo.
+- Some controllers still expose entities directly instead of dedicated response DTOs.
 
 ## 📞 Support
 
@@ -368,4 +371,3 @@ If you encounter any issues or have questions, please open an issue on GitHub.
 ---
 
 **Happy Coding! 🎉**
-

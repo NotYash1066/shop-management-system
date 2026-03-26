@@ -10,13 +10,22 @@ import lombok.Data;
 @Data
 @Table(name = "products", indexes = {
     @Index(name = "idx_product_sku", columnList = "sku"),
-    @Index(name = "idx_product_shop", columnList = "shop_id")
+    @Index(name = "idx_product_shop", columnList = "shop_id"),
+    @Index(name = "idx_product_shop_sku", columnList = "shop_id, sku"),
+    @Index(name = "idx_product_shop_category", columnList = "shop_id, category_id"),
+    @Index(name = "idx_product_shop_stock", columnList = "shop_id, stockQuantity")
+}, uniqueConstraints = {
+    @UniqueConstraint(name = "uk_product_shop_sku", columnNames = {"shop_id", "sku"})
 })
 @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
 public class Product {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+
+    @Version
+    private Long version;
+
 	private String name;
 	private double price;
 
