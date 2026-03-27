@@ -1,3 +1,38 @@
+"""
+load_test.py — Simple concurrent HTTP load tester for the Shop Management System.
+
+Fires a configurable number of requests at a single endpoint using a thread pool,
+then prints a JSON summary with latency percentiles and status code counts.
+
+Usage:
+    python3 load_test.py --url <url> --method <GET|POST|...> \
+        --requests <n> --concurrency <n> \
+        --headers '<json>' --payload '<json>'
+
+Example (authenticated GET):
+    python3 load_test.py \\
+        --url http://localhost:8080/api/products/sku/SKU-1 \\
+        --method GET \\
+        --requests 500 \\
+        --concurrency 50 \\
+        --headers '{"Authorization":"Bearer <jwt>"}' \\
+        --payload '{}'
+
+Output fields:
+    url                  Target URL
+    method               HTTP method used
+    total_requests       Number of requests sent
+    concurrency          Max parallel workers
+    duration_seconds     Wall-clock time for the full run
+    requests_per_second  Throughput (total_requests / duration_seconds)
+    status_counts        Map of HTTP status code -> count (errors shown as "connection_error")
+    avg_latency_ms       Mean end-to-end latency in milliseconds
+    p50_latency_ms       Median latency
+    p95_latency_ms       95th percentile latency
+    p99_latency_ms       99th percentile latency
+    max_latency_ms       Worst single request latency
+"""
+
 import argparse
 import json
 import statistics
@@ -8,6 +43,7 @@ import requests
 
 
 def percentile(sorted_values, percent):
+    """Return the value at the given percentile (0.0–1.0) using linear interpolation."""
     if not sorted_values:
         return 0.0
     index = (len(sorted_values) - 1) * percent
@@ -18,6 +54,11 @@ def percentile(sorted_values, percent):
 
 
 def send_request(session, method, url, headers, payload):
+    """Send a single HTTP request and return (status_code, latency_ms).
+
+    Network/timeout errors are returned as ("connection_error", latency_ms)
+    so they still contribute to latency stats without crashing the run.
+    """
     started_at = time.perf_counter()
     try:
         response = session.request(method=method, url=url, headers=headers, json=payload, timeout=10)
@@ -29,6 +70,11 @@ def send_request(session, method, url, headers, payload):
 
 
 def run_load_test(url, total_requests, concurrency, method, payload, headers):
+    """Fire total_requests against url using a thread pool of size concurrency.
+
+    Returns a dict with throughput, status code distribution, and latency
+    percentiles (avg, p50, p95, p99, max).
+    """
     status_counts = {}
     latencies = []
     started_at = time.perf_counter()

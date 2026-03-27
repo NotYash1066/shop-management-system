@@ -23,8 +23,6 @@ pip install requests
 ### Step 1: Start the Application
 
 ```bash
-cd /home/yash/GitHub/shop-management-system
-
 # Build the application
 ./mvnw clean package -DskipTests
 
@@ -56,16 +54,16 @@ If you prefer to run tests manually, here's how:
 
 **Setup:**
 ```bash
-# Get JWT token
+# Get JWT token (requires jq: https://stedolan.github.io/jq/)
 TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}' | jq -r '.token')
+  -d '{"username":"admin","password":"admin123"}' | jq -r '.accessToken')
 
 # Create test product
 curl -X POST http://localhost:8080/api/products \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"name":"TestProduct","price":100,"sku":"TEST-SKU-001","quantity":50}'
+  -d '{"name":"TestProduct","price":100,"sku":"TEST-SKU-001","stockQuantity":50}'
 ```
 
 **Test Cold Cache (first request):**
@@ -103,20 +101,20 @@ python3 load_test.py \
 
 **Setup:**
 ```bash
-# Create category for test product
+# Create category
 curl -X POST http://localhost:8080/api/categories \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"Benchmark Category"}'
 
-# Create product for order
+# Create product with enough stock for concurrent orders
 curl -X POST http://localhost:8080/api/products \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"name":"OrderProduct","price":25,"quantity":100,"categoryId":1}'
+  -d '{"name":"OrderProduct","price":25,"sku":"ORD-BENCH-001","stockQuantity":10000}'
 ```
 
-**Test Order Placement:**
+**Test Order Placement** (replace `USER_ID` with the id returned from login):
 ```bash
 python3 load_test.py \
   --url "http://localhost:8080/api/orders" \
@@ -124,7 +122,7 @@ python3 load_test.py \
   --requests 50 \
   --concurrency 10 \
   --headers "{\"Authorization\":\"Bearer $TOKEN\"}" \
-  --payload '{"items":[{"productId":2,"quantity":1}]}'
+  --payload '{"userId": USER_ID, "items":[{"productId":1,"quantity":1}]}'
 ```
 
 **Expected Result:**
