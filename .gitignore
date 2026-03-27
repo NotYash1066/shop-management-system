@@ -33,3 +33,9 @@ build/
 .vscode/
 /.agents
 test_api.sh
+.kiro/specs/shop-management-frontend/.config.kiro
+.kiro/specs/shop-management-frontend/design.md
+.gitignore
+.kiro/specs/shop-management-frontend/tasks.md
+.kiro/specs/shop-management-frontend/requirements.md
+benchmark.py
