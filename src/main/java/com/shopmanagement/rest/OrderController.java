@@ -28,4 +28,16 @@ public class OrderController {
     public ResponseEntity<?> getOrdersByUser(@PathVariable Long userId) {
         return ResponseEntity.ok(orderService.getOrdersByUserId(userId));
     }
+
+    @GetMapping
+    @PreAuthorize("hasAuthority('dashboard:read')")
+    public ResponseEntity<?> getAllOrders() {
+        return ResponseEntity.ok(orderService.getAllOrders());
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('dashboard:read')")
+    public ResponseEntity<?> getOrderById(@PathVariable Long id) {
+        return ResponseEntity.ok(orderService.getOrderById(id));
+    }
 }

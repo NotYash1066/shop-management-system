@@ -30,6 +30,9 @@ public class SecurityConfig { // Removed extends WebSecurityConfiguration
   private AuthEntryPointJwt unauthorizedHandler;
 
   @Autowired
+  private CorsConfig corsConfig;
+
+  @Autowired
   private JwtUtils jwtUtils;
 
   // @Bean annotation removed to prevent double registration (global + security chain)
@@ -61,18 +64,18 @@ public class SecurityConfig { // Removed extends WebSecurityConfiguration
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.csrf(csrf -> csrf.disable())
+        .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
         .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth ->
           auth.requestMatchers("/api/auth/**").permitAll()
               .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-              .requestMatchers("/api/test/**").permitAll() // Optional: for test endpoints
+              .requestMatchers("/api/test/**").permitAll()
               .requestMatchers("/error").permitAll()
               .anyRequest().authenticated()
         );
 
     http.authenticationProvider(authenticationProvider());
-
     http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

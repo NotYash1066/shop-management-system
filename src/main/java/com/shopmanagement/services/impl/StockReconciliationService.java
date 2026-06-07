@@ -53,7 +53,10 @@ public class StockReconciliationService {
                             item.getProduct().getId(),
                             order.getShop().getId())
                     .orElseThrow(() -> new RuntimeException("Product not found"));
-            int requestedQuantity = item.getQuantity();
+            Integer requestedQuantity = item.getQuantity();
+            if (requestedQuantity == null || requestedQuantity < 1) {
+                throw new IllegalArgumentException("Quantity must be at least 1");
+            }
 
             if (product.getStockQuantity() == null || product.getStockQuantity() < requestedQuantity) {
                 throw new RuntimeException("Insufficient stock for product: " + product.getName());

@@ -46,6 +46,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResponseDTO createOrder(OrderRequestDTO orderRequest) {
+        validateOrderRequest(orderRequest);
+
         User user = userRepository.findById(orderRequest.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -103,6 +105,37 @@ public class OrderServiceImpl implements OrderService {
             throw new AccessDeniedException("You can only view your own orders");
         }
         return orderRepository.findByUserIdAndShopId(userId, currentShopId);
+    }
+
+    @Override
+    public List<Order> getAllOrders() {
+        Long currentShopId = currentUserService.getCurrentShopId();
+        return orderRepository.findByShopId(currentShopId);
+    }
+
+    @Override
+    public Order getOrderById(Long orderId) {
+        Long currentShopId = currentUserService.getCurrentShopId();
+        return orderRepository.findByIdAndShopId(orderId, currentShopId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+    }
+
+    private void validateOrderRequest(OrderRequestDTO orderRequest) {
+        if (orderRequest == null || orderRequest.getItems() == null || orderRequest.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Order must contain at least one item");
+        }
+
+        for (OrderItemRequestDTO itemRequest : orderRequest.getItems()) {
+            if (itemRequest == null) {
+                throw new IllegalArgumentException("Order item is required");
+            }
+            if (itemRequest.getProductId() == null) {
+                throw new IllegalArgumentException("Product ID is required");
+            }
+            if (itemRequest.getQuantity() == null || itemRequest.getQuantity() < 1) {
+                throw new IllegalArgumentException("Quantity must be at least 1");
+            }
+        }
     }
 
     private OrderResponseDTO toResponse(Order order) {

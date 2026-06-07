@@ -120,6 +120,42 @@ class StockReconciliationServiceTest {
     }
 
     @Test
+    void shouldRejectInvalidStoredQuantityBeforeChangingStock() {
+        Shop shop = new Shop("Main", "owner@example.com");
+        shop.setId(1L);
+
+        User user = new User("admin", "encoded", "ADMIN");
+        user.setId(10L);
+        user.setEmail("admin@example.com");
+        user.setShop(shop);
+
+        Product product = new Product();
+        product.setId(101L);
+        product.setName("Keyboard");
+        product.setSku("KEY-001");
+        product.setStockQuantity(5);
+        product.setShop(shop);
+
+        Order order = new Order();
+        order.setId(53L);
+        order.setUser(user);
+        order.setShop(shop);
+        order.setStatus(OrderStatus.PENDING);
+        order.setOrderItems(List.of(new OrderItem(order, product, -3, 100.0)));
+
+        when(orderRepository.findDetailedById(53L)).thenReturn(Optional.of(order));
+        when(productRepository.findByIdAndShopIdForUpdate(101L, 1L)).thenReturn(Optional.of(product));
+
+        assertThatThrownBy(() -> stockReconciliationService.reconcileOrder(53L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Quantity must be at least 1");
+
+        assertThat(product.getStockQuantity()).isEqualTo(5);
+        verify(productRepository, never()).save(product);
+        verify(inventoryCacheService, never()).evictProduct(1L, 101L, "KEY-001");
+    }
+
+    @Test
     void shouldMarkOrderFailedWithFailureMetadata() {
         Shop shop = new Shop("Main", "owner@example.com");
         shop.setId(1L);

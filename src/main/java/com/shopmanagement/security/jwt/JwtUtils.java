@@ -14,16 +14,29 @@ import com.shopmanagement.security.services.UserDetailsImpl;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class JwtUtils {
   private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
+  static final String INSECURE_DEFAULT_SECRET =
+      "WyJhbGciOiJIUzUxMiJ9eyJzdWIiOiJzaG9wLW1hbmFnZW1lbnQtc3lzdGVtIiwiY29udGV4dCI6InByb2R1Y3Rpb24ifQ==";
 
   @Value("${app.jwtSecret}")
   private String jwtSecret;
 
   @Value("${app.jwtExpirationMs}")
   private int jwtExpirationMs;
+
+  @PostConstruct
+  void validateJwtSecret() {
+    if (jwtSecret == null || jwtSecret.isBlank()) {
+      throw new IllegalStateException("APP_JWT_SECRET must be set");
+    }
+    if (INSECURE_DEFAULT_SECRET.equals(jwtSecret)) {
+      throw new IllegalStateException("APP_JWT_SECRET must not use the bundled default secret");
+    }
+  }
 
   public String generateJwtToken(Authentication authentication) {
 

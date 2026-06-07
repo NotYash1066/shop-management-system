@@ -1,11 +1,12 @@
 [phases.setup]
-nixPkgs = ["jdk17"]
+nixPkgs = ["jdk21"]
 
 [phases.build]
 cmds = ["./mvnw clean package -DskipTests"]
 
 [start]
-cmd = "java -jar target/*.jar"
+cmd = "java -jar target/*.jar --spring.profiles.active=prod"
 
 [variables]
 MISE_HTTP_TIMEOUT = "300"
+SPRING_PROFILES_ACTIVE = "prod"

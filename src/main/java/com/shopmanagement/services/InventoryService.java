@@ -8,9 +8,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.shopmanagement.config.CacheConfig;
 import com.shopmanagement.dto.ProductResponseDTO;
+import com.shopmanagement.entity.Category;
 import com.shopmanagement.entity.Product;
+import com.shopmanagement.entity.Supplier;
+import com.shopmanagement.repository.CategoryRepository;
 import com.shopmanagement.repository.ProductRepository;
 import com.shopmanagement.repository.ShopRepository;
+import com.shopmanagement.repository.SupplierRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -19,16 +23,22 @@ public class InventoryService {
 
     private final ProductRepository productRepository;
     private final ShopRepository shopRepository;
+    private final CategoryRepository categoryRepository;
+    private final SupplierRepository supplierRepository;
     private final CurrentUserService currentUserService;
     private final InventoryCacheService inventoryCacheService;
 
     public InventoryService(
             ProductRepository productRepository,
             ShopRepository shopRepository,
+            CategoryRepository categoryRepository,
+            SupplierRepository supplierRepository,
             CurrentUserService currentUserService,
             InventoryCacheService inventoryCacheService) {
         this.productRepository = productRepository;
         this.shopRepository = shopRepository;
+        this.categoryRepository = categoryRepository;
+        this.supplierRepository = supplierRepository;
         this.currentUserService = currentUserService;
         this.inventoryCacheService = inventoryCacheService;
     }
@@ -68,6 +78,8 @@ public class InventoryService {
         Long shopId = currentUserService.getCurrentShopId();
         validateUniqueSku(product.getSku(), shopId, null);
         product.setShop(shopRepository.getReferenceById(shopId));
+        product.setCategory(resolveCategoryForShop(product.getCategory(), shopId));
+        product.setSupplier(resolveSupplierForShop(product.getSupplier(), shopId));
         Product savedProduct = productRepository.save(product);
         return getProductById(savedProduct.getId());
     }
@@ -81,6 +93,8 @@ public class InventoryService {
         validateUniqueSku(product.getSku(), shopId, id);
         product.setId(id);
         product.setShop(shopRepository.getReferenceById(shopId));
+        product.setCategory(resolveCategoryForShop(product.getCategory(), shopId));
+        product.setSupplier(resolveSupplierForShop(product.getSupplier(), shopId));
         productRepository.save(product);
         inventoryCacheService.evictProduct(shopId, id, existingProduct.getSku());
         inventoryCacheService.evictProduct(shopId, id, product.getSku());
@@ -115,5 +129,29 @@ public class InventoryService {
         if (skuExists) {
             throw new IllegalArgumentException("SKU must be unique within a shop");
         }
+    }
+
+    private Category resolveCategoryForShop(Category category, Long shopId) {
+        if (category == null || category.getId() == null) {
+            return null;
+        }
+
+        Category resolvedCategory = categoryRepository.findByIdAndShopId(category.getId(), shopId);
+        if (resolvedCategory == null) {
+            throw new EntityNotFoundException("Category not found");
+        }
+        return resolvedCategory;
+    }
+
+    private Supplier resolveSupplierForShop(Supplier supplier, Long shopId) {
+        if (supplier == null || supplier.getId() == null) {
+            return null;
+        }
+
+        Supplier resolvedSupplier = supplierRepository.findByIdAndShopId(supplier.getId(), shopId);
+        if (resolvedSupplier == null) {
+            throw new EntityNotFoundException("Supplier not found");
+        }
+        return resolvedSupplier;
     }
 }
