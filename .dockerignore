@@ -1,0 +1,42 @@
+# Build output (we build inside Docker)
+target/
+!target/*.jar   # allow the final jar only if you pre-build locally (not recommended for CI)
+
+# Source control & metadata
+.git/
+.gitignore
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Environment & secrets (never in image)
+.env
+.env.*
+*.pem
+*.key
+secrets/
+
+# Documentation & local tooling
+*.md
+.vscode/
+.idea/
+.omx/
+.kiro/
+.ruff_cache/
+*.log
+
+# Test code (not needed in runtime image)
+src/test/
+
+# Local scripts & benchmarks
+test_api.sh
+benchmark.py
+load_test.py
+stress_test.py
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Python caches (if any leftover)
+__pycache__/
+*.py[cod]

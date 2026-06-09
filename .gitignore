@@ -32,10 +32,32 @@ build/
 ### VS Code ###
 .vscode/
 /.agents
+
+# Secrets & Environment (CRITICAL)
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+*.pem
+*.key
+id_rsa*
+secrets/
+*.secret
+
+# Local dev / test scripts & data
 test_api.sh
-.kiro/specs/shop-management-frontend/.config.kiro
-.kiro/specs/shop-management-frontend/design.md
-.gitignore
-.kiro/specs/shop-management-frontend/tasks.md
-.kiro/specs/shop-management-frontend/requirements.md
 benchmark.py
+load_test.py
+stress_test.py
+*.log
+
+# Kiro / internal specs (not for deployment)
+.kiro/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
